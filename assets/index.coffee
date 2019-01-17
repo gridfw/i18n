@@ -4,7 +4,6 @@
 ###
 'use strict'
 
-
 # reload
 module.exports=
 	name: 'i18n'
