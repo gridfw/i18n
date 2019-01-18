@@ -7,6 +7,8 @@ rename			= require "gulp-rename"
 coffeescript	= require 'gulp-coffeescript'
 PluginError		= gulp.PluginError
 cliTable		= require 'cli-table'
+cliTable		= require 'cli-table'
+template		= require 'gulp-template' # compile some consts into digits
 
 # compile final values (consts to be remplaced at compile time)
 # handlers
@@ -14,6 +16,7 @@ compileCoffee = ->
 	glp = gulp.src 'assets/**/[!_]*.coffee', nodir: true
 		# include related files
 		.pipe include hardFail: true
+		.pipe template()
 		# convert to js
 		.pipe coffeescript(bare: true).on 'error', errorHandler
 	# uglify when prod mode

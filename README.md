@@ -22,7 +22,7 @@ app.i18n.reload({
 });
 
 // or like any other gridfw plugin via:
-app.plugins.i18n.reload({...})
+app.plugin('i18n').reload({...})
 
 ```
 Locals are "js" files. See i18n gulp compiler to see how to create those files at: https://www.npmjs.com/package/gridfw-i18n-gulp
@@ -50,7 +50,7 @@ Inside your config file, add the following:
 	* default: String - Contains default local to use when no one is selected
 	* locals: String or list of Strings - GLOB path format to load all locals (will load only useful ones to memory depending on use)
 	* setLangParam: String - name of query param that will be used to change language, @default: 'set-lang', Example: "?set-lang=en"
-	* ctxLang: function - see "Define local" section bellow
+	* ctxLocal: function - see "Define local" section bellow
 
 	* session: string or object - see session management bellow
 	* cache: boolean - when true, use cache to optimize memory, load only required i18n files. load all otherwise @default: true
@@ -120,7 +120,7 @@ Every page with no temporary local will be shown in this local.
 To change a user local:
 * call URL: http://<your-domain>/<target-path-after-local-set>?anyparam=...&set-lang=<target-local>. will result a redirection to target URL
 
-* use ctx.i18n.local = '<target-local>'
+* use: await ctx.setLocal('<target-local>') # this will load local data, change ctx.i18n and ctx.locals.i18n
 
 ### Temporary local: Recommanded for pages depending on search engines
 You can define a page language depending on a visible param inside the URL. This make each page looks depending on the target local.
