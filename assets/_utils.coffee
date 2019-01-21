@@ -9,8 +9,8 @@ I18N_LANG_FORMAT = /^(?:[a-z]{2}|[a-z]{2}-[A-Z]{2})\.js$/
 ###
 _clear = (i18n)->
 	# clear caches
-	i18n._map = null
-	i18n._cache = Object.create null
+	i18n.m = null
+	i18n.c = Object.create null
 	return
 
 # load i18n mapping files

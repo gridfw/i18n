@@ -1,5 +1,6 @@
 Glob = require 'glob'
 Path = require 'path'
+fs	= require 'mz/fs'
 
 # map settings indexes
 <%
@@ -16,15 +17,22 @@ var settings ={
 #=include _utils.coffee
 #=include _request-wrapper.coffee
 #=include _set-local.coffee
+<% if(mode === 'browser'){ %>
+
+<% }else{ %>
+#=include _load-local-nodejs.coffee
+<% } %>
 
 class I18N
 	constructor: (@app)->
 		@enabled = on # the plugin is enabled
 		# cache
-		@_map = null # map supported languages: lg: path, en : '/path/en.js'
-		@_cache= Object.create null # store loaded langs
+		@m = null # map supported languages: lg: path, en : '/path/en.js'
+		@c= Object.create null # store loaded langs
 		# handler wrapper
 		@_wrapper = _reqWrapper this
+		# get local
+		@get = _loadLocal
 		# set as module
 		Object.defineProperty @app, 'i18n',
 			value: this
@@ -54,7 +62,7 @@ class I18N
 		# default local
 		defaultLocal = options.default || 'en' # default language
 		# load files
-		i18nMap= @_map= await _loadI18nMap options.locals
+		i18nMap= @m= await _loadI18nMap options.locals
 		throw new Error "Default local [#{defaultLocal}] is missing" unless defaultLocal of i18nMap
 		# session management
 		session = options.session
@@ -113,10 +121,6 @@ class I18N
 	###*
 	 * Has
 	###
-	has: (local)-> local of @_map
-	###*
-	 * Get some local
-	###
-	get: (local)->
+	has: (local)-> local of @m
 
 module.exports= I18N
