@@ -19,8 +19,11 @@
     "gulp-coffeescript": "0.0.15",
     "gulp-include": "^2.3.1",
     "gulp-rename": "^1.4.0",
+    "gulp-template": "^5.0.0",
     "gulp-uglify": "^3.0.1",
     "gulp-util": "^3.0.8"
   },
-  "dependencies": {}
+  "dependencies": {
+    "mz": "^2.7.0"
+  }
 }

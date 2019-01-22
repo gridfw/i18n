@@ -10,24 +10,32 @@ cliTable		= require 'cli-table'
 cliTable		= require 'cli-table'
 template		= require 'gulp-template' # compile some consts into digits
 
+settings = 
+	isProd: gutil.env.mode is 'prod'
+
 # compile final values (consts to be remplaced at compile time)
 # handlers
-compileCoffee = ->
+_compileCoffee = (mode, dest)->
 	glp = gulp.src 'assets/**/[!_]*.coffee', nodir: true
 		# include related files
 		.pipe include hardFail: true
-		.pipe template()
+		.pipe template {mode}
 		# convert to js
 		.pipe coffeescript(bare: true).on 'error', errorHandler
+		.pipe rename dest + '.js'
 	# uglify when prod mode
-	if gutil.env.mode is 'prod'
+	if settings.isProd
 		glp = glp.pipe uglify()
 	# save 
 	glp.pipe gulp.dest 'build'
 		.on 'error', errorHandler
+
+compileCoffee = -> _compileCoffee 'node', 'index'
+compileCoffeeBrowser= -> _compileCoffee 'browser', 'i18n-browser'
+
 # watch files
 watch = ->
-	gulp.watch ['assets/**/*.coffee'], compileCoffee
+	gulp.watch ['assets/**/*.coffee'], compileCoffee, compileCoffeeBrowser
 	return
 
 # error handler
@@ -59,7 +67,7 @@ errorHandler= (err)->
 	return
 
 # default task
-if gutil.env.mode is 'prod'
-	gulp.task 'default', gulp.series compileCoffee
+if settings.isProd
+	gulp.task 'default', gulp.series compileCoffee, compileCoffeeBrowser
 else
-	gulp.task 'default', gulp.series compileCoffee, watch
+	gulp.task 'default', gulp.series compileCoffee, compileCoffeeBrowser, watch
