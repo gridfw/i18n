@@ -17,11 +17,7 @@ var settings ={
 #=include _utils.coffee
 #=include _request-wrapper.coffee
 #=include _set-local.coffee
-<% if(mode === 'browser'){ %>
-
-<% }else{ %>
 #=include _load-local-nodejs.coffee
-<% } %>
 
 class I18N
 	constructor: (@app)->
@@ -29,6 +25,7 @@ class I18N
 		# cache
 		@m = null # map supported languages: lg: path, en : '/path/en.js'
 		@c= Object.create null # store loaded langs
+		@s= []
 		# handler wrapper
 		@_wrapper = _reqWrapper this
 		# get local
@@ -51,7 +48,7 @@ class I18N
 	###
 	reload: (options)->
 		# ignore loading unless it has locals path
-		return unless options and 'locals' in options
+		# return unless options and 'locals' in options
 		# check options
 		for p in ['default', 'param', 'setLangParam']
 			throw new Error "options.#{p} expected string" if p of options and typeof options[p] isnt 'string'
@@ -62,7 +59,7 @@ class I18N
 		# default local
 		defaultLocal = options.default || 'en' # default language
 		# load files
-		i18nMap= @m= await _loadI18nMap options.locals
+		i18nMap= @m= await _loadI18nMap options.locals || Path.join process.cwd, 'i18n'
 		throw new Error "Default local [#{defaultLocal}] is missing" unless defaultLocal of i18nMap
 		# session management
 		session = options.session
@@ -78,14 +75,13 @@ class I18N
 		else
 			throw new Error 'Illegal options.session'
 		# settings
-		settings= [
-			defaultLocal # default local
-			options.param || 'i18n'
-			options.setLangParam || 'set-lang'
-			options.ctxLocal
-			sessionGet
-			sessionSet
-		]
+		settings = @s
+		settings[<%= settings.default %>]= defaultLocal
+		settings[<%= settings.param %>]= options.param || 'i18n'
+		settings[<%= settings.setLangParam %>]= options.setLangParam || 'set-lang'
+		settings[<%= settings.ctxLocal %>]= options.ctxLocal
+		settings[<%= settings.sessionGet %>]= sessionGet
+		settings[<%= settings.sessionSet %>]= sessionSet
 		# set local context method
 		Object.defineProperty @app.Context, 'setLocal',
 			value: _setLocal

@@ -16,8 +16,7 @@
  * @param {string} local - local to set
  * @param {boolean} relaxed - if use parent local when missing (example: use "en" when "en-US" is messing)
  */
-var Glob, I18N, I18N_LANG_FORMAT, Path, _clear, _loadI18nMap, _loadLocal, _reqWrapper, _setLocal, fs,
-  indexOf = [].indexOf;
+var Glob, I18N, I18N_LANG_FORMAT, Path, _clear, _loadI18nMap, _loadLocal, _reqWrapper, _setLocal, fs;
 
 Glob = require('glob');
 
@@ -44,10 +43,12 @@ _clear = function(i18n) {
 // load i18n mapping files
 _loadI18nMap = function(globSelector) {
   return new Promise(function(resolve, reject) {
+    var result;
+    result = Object.create(null);
     return Glob(globSelector, {
       nodir: true
     }, function(err, files) {
-      var file, fileName, i, len, results;
+      var file, fileName, i, len;
       try {
         if (err) {
           // check
@@ -57,7 +58,6 @@ _loadI18nMap = function(globSelector) {
           throw 'No i18n file found';
         }
 // loop
-        results = [];
         for (i = 0, len = files.length; i < len; i++) {
           file = files[i];
           fileName = Path.basename(file);
@@ -67,16 +67,15 @@ _loadI18nMap = function(globSelector) {
           }
           // append
           fileName = fileName.slice(0, -3);
-          if (fileName in _supportedMap) {
+          if (fileName in result) {
             throw new Error(`Multiple files found for local: ${filename}`);
-          } else {
-            results.push(void 0);
           }
+          result[fileName] = file;
         }
-        return results;
+        resolve(result);
       } catch (error) {
         err = error;
-        return reject(err);
+        reject(err);
       }
     });
   });
@@ -123,11 +122,11 @@ _reqWrapper = function(i18n) {
       i18nObj = (await _getLocal(settings[0]));
     }
     // set this as current i18n
-    Object.defineProperty(this, 'i18n', {
+    Object.defineProperty(ctx, 'i18n', {
       value: i18nObj,
       configurable: true
     });
-    Object.defineProperty(this.locals, 'i18n', {
+    Object.defineProperty(ctx.locals, 'i18n', {
       value: i18nObj,
       configurable: true
     });
@@ -168,7 +167,7 @@ _loadLocal = async function(local) {
     return i18n;
   }
   // check in map
-  i18n = i18n.m[local];
+  i18n = this.m[local];
   if (!i18n) {
     return i18n;
   }
@@ -187,6 +186,7 @@ I18N = class I18N {
     // cache
     this.m = null; // map supported languages: lg: path, en : '/path/en.js'
     this.c = Object.create(null); // store loaded langs
+    this.s = [];
     // handler wrapper
     this._wrapper = _reqWrapper(this);
     // get local
@@ -212,11 +212,9 @@ I18N = class I18N {
    */
   async reload(options) {
     var defaultLocal, i, i18nMap, len, p, ref, session, sessionGet, sessionParam, sessionSet, settings;
-    // ignore loading unless it has locals path
-    if (!(options && indexOf.call(options, 'locals') >= 0)) {
-      return;
-    }
     ref = ['default', 'param', 'setLangParam'];
+    // ignore loading unless it has locals path
+    // return unless options and 'locals' in options
     // check options
     for (i = 0, len = ref.length; i < len; i++) {
       p = ref[i];
@@ -235,7 +233,7 @@ I18N = class I18N {
     // default local
     defaultLocal = options.default || 'en'; // default language
     // load files
-    i18nMap = this.m = (await _loadI18nMap(options.locals));
+    i18nMap = this.m = (await _loadI18nMap(options.locals || Path.join(process.cwd, 'i18n')));
     if (!(defaultLocal in i18nMap)) {
       throw new Error(`Default local [${defaultLocal}] is missing`);
     }
@@ -262,7 +260,13 @@ I18N = class I18N {
       throw new Error('Illegal options.session');
     }
     // settings
-    settings = [defaultLocal, options.param || 'i18n', options.setLangParam || 'set-lang', options.ctxLocal, sessionGet, sessionSet]; // default local
+    settings = this.s;
+    settings[0] = defaultLocal;
+    settings[1] = options.param || 'i18n';
+    settings[2] = options.setLangParam || 'set-lang';
+    settings[3] = options.ctxLocal;
+    settings[4] = sessionGet;
+    settings[5] = sessionSet;
     // set local context method
     Object.defineProperty(this.app.Context, 'setLocal', {
       value: _setLocal,

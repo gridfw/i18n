@@ -30,10 +30,10 @@ _reqWrapper = (i18n)->
 		i18nObj = await _getLocal param || settings[<%= settings.default %>]
 		i18nObj ?= await _getLocal settings[<%= settings.default %>]
 		# set this as current i18n
-		Object.defineProperty this, 'i18n',
+		Object.defineProperty ctx, 'i18n',
 			value: i18nObj
 			configurable: on
-		Object.defineProperty @locals, 'i18n',
+		Object.defineProperty ctx.locals, 'i18n',
 			value: i18nObj
 			configurable: on
 		# exec hadnler fx

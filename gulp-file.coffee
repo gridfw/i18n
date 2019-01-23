@@ -16,10 +16,10 @@ settings =
 # compile final values (consts to be remplaced at compile time)
 # handlers
 _compileCoffee = (mode, dest)->
-	glp = gulp.src 'assets/**/[!_]*.coffee', nodir: true
+	glp = gulp.src "assets/#{mode}.coffee"
 		# include related files
 		.pipe include hardFail: true
-		.pipe template {mode}
+		.pipe template()
 		# convert to js
 		.pipe coffeescript(bare: true).on 'error', errorHandler
 		.pipe rename dest + '.js'

@@ -16,6 +16,7 @@ _clear = (i18n)->
 # load i18n mapping files
 _loadI18nMap = (globSelector)->
 	new Promise (resolve, reject)->
+		result = Object.create null
 		Glob globSelector, {nodir:yes}, (err, files)->
 			try
 				# check
@@ -28,7 +29,10 @@ _loadI18nMap = (globSelector)->
 					throw new SyntaxError "Illegal file name: [#{fileName}], should matches: #{I18N_LANG_FORMAT}" unless I18N_LANG_FORMAT.test fileName
 					# append
 					fileName = fileName.slice 0, -3
-					throw new Error "Multiple files found for local: #{filename}" if fileName of _supportedMap
+					throw new Error "Multiple files found for local: #{filename}" if fileName of result
+					result[fileName] = file
+				resolve result
 			catch err
 				reject err
+			return
 				

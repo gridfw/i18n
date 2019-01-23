@@ -8,9 +8,8 @@ _loadLocal = (local)->
 	return i18n if i18n
 
 	# check in map
-	i18n = i18n.m[local]
+	i18n = @m[local]
 	return i18n unless i18n
-
 	# load from file
 	i18n = eval await fs.readFile i18n
 	# cache
