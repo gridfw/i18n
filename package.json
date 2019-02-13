@@ -1,6 +1,6 @@
 {
   "name": "gridfw-i18n",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "fast i18n plugin for GridFW",
   "main": "build/index.js",
   "scripts": {
@@ -14,6 +14,7 @@
   "license": "MIT",
   "devDependencies": {
     "cli-table": "^0.3.1",
+    "gridfw-compiler": "^1.0.0",
     "gulp": "^4.0.0",
     "gulp-chug": "^0.5.1",
     "gulp-coffeescript": "0.0.15",

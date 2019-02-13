@@ -6,9 +6,10 @@ uglify			= require('gulp-uglify-es').default
 rename			= require "gulp-rename"
 coffeescript	= require 'gulp-coffeescript'
 
-GfwCompiler		= require '../compiler'
+GfwCompiler		= require 'gridfw-compiler'
 
 settings = 
+	mode: gutil.env.mode || 'dev'
 	isProd: gutil.env.mode is 'prod'
 
 # compile final values (consts to be remplaced at compile time)
@@ -17,7 +18,7 @@ _compileCoffee = (mode, dest)->
 	glp = gulp.src "assets/#{mode}.coffee"
 		# include related files
 		.pipe include hardFail: true
-		.pipe GfwCompiler.template().on 'error', GfwCompiler.logError
+		.pipe GfwCompiler.template(settings).on 'error', GfwCompiler.logError
 		# convert to js
 		.pipe coffeescript(bare: true).on 'error', GfwCompiler.logError
 		.pipe rename dest + '.js'

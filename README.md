@@ -232,3 +232,6 @@ app.i18n.loaded # returns ['en', ...]
  */
 I18N.load({fr:{...}, en:{...}});
 ```
+
+# Supporters
+[![coredigix](https://www.coredigix.com/img/logo.png)](https://coredigix.com)
