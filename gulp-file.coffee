@@ -30,14 +30,14 @@ _compileCoffee = (mode, dest)->
 		.on 'error', GfwCompiler.logError
 
 compileCoffee = -> _compileCoffee 'node', 'index'
-compileCoffeeBrowser= -> _compileCoffee 'browser', 'i18n-browser'
+# compileCoffeeBrowser= -> _compileCoffee 'browser', 'i18n-browser'
 
 # watch files
 watch = (cb)->
 	unless settings.isProd
-		gulp.watch ['assets/**/*.coffee'], compileCoffee, compileCoffeeBrowser
+		gulp.watch ['assets/**/*.coffee'], compileCoffee #, compileCoffeeBrowser
 	cb();
 	return
 
-# default task
-gulp.task 'default', gulp.series compileCoffee, compileCoffeeBrowser, watch
+# default task ,compileCoffeeBrowser
+gulp.task 'default', gulp.series compileCoffee, watch

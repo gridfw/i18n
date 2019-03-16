@@ -2,90 +2,96 @@ Glob = require 'glob'
 Path = require 'path'
 fs	= require 'mz/fs'
 
-# map settings indexes
-<%
-var settings ={
-	default: 0,
-	param: 1,
-	setLangParam: 2,
-	ctxLocal: 3,
-	sessionGet: 4,
-	sessionSet: 5
-};
-%>
+_create= Object.create
+_defineProperty= Object.defineProperty
+###*
+ * Accepted i18n formats
+ * en.js or en-US.js
+###
+I18N_LANG_FORMAT = /^(?:[a-z]{2}|[a-z]{2}-[A-Z]{2})\.js$/
 
-#=include _utils.coffee
-#=include _request-wrapper.coffee
-#=include _set-local.coffee
-#=include _load-local-nodejs.coffee
+# set local
+_setLocal = (cache, map)->
+	(local, relaxed)->
+		try
+			# get local from map
+			unless (i18nPath= map[local]) or (relaxed and i18nPath= map[local.substr(0,2)])
+				throw new Error "Unknown local: #{local}"
+			i18n= await cache.get i18nPath
+			# set this as current i18n
+			_defineProperty this, 'i18n',
+				value: i18n
+				configurable: on
+			_defineProperty @locals, 'i18n',
+				value: i18n
+				configurable: on
+		catch err
+			if err is 404
+				err= new Error "I18N>> Could not find: #{i18nPath}"
+			else if typeof err is 'string'
+				err= new Error "I18N>> #{err}"
+			throw err
+		return
+
+# get local from cache
+_getFromCache= (cache, map)->
+	(local)->
+		try
+			if local= map[local]
+				cache.get local
+		catch err
+			return null if err is 404
+			throw err
+		
+
+# load i18n mapping files
+_loadI18nMap = (globSelector)->
+	new Promise (resolve, reject)->
+		result = Object.create null
+		Glob globSelector, {nodir:yes, absolute:yes}, (err, files)->
+			try
+				# check
+				throw err if err
+				throw 'No i18n file found' unless files.length
+				# loop
+				for file in files
+					fileName = Path.basename file
+					# check filename format
+					throw new SyntaxError "Illegal file name: [#{fileName}], should matches: #{I18N_LANG_FORMAT}" unless I18N_LANG_FORMAT.test fileName
+					# append
+					fileName = fileName.slice 0, -3
+					throw new Error "Multiple files found for local: #{filename}" if fileName of result
+					result[fileName] = file
+				resolve result
+			catch err
+				reject err
+			return
+
 
 class I18N
-	constructor: (@app)->
+	constructor: (app)->
+		@app= app
 		@enabled = on # the plugin is enabled
-		# cache
-		@m = null # map supported languages: lg: path, en : '/path/en.js'
-		@c= Object.create null # store loaded langs
-		@s= []
-		# handler wrapper
-		@_wrapper = _reqWrapper this
-		# get local
-		@get = _loadLocal
 		# set as module
-		Object.defineProperty @app, 'i18n',
+		_defineProperty app, 'i18n',
 			value: this
 			configurable: on
 		return
 	###*
 	 * Reload the app
-	 * @optional @param  {String} options.default - default local @default en or first local in the list
-	 * @optional @param {String} options.param - param name @default i18n
 	 * @param {String | [String]} options.locals - GLOB paths to local files
-	 * @optional @param {String} options.setLangParam - langParam name @default 'set-lang'
-	 * @optional @param {function} options.ctxLocal - current context language, will be use for current request only
-	 * @optional @param {String or object} options.session - get/set current local value
-	 * @optional @param {Boolean} cache - use i18n cache
 	 * @return self
 	###
 	reload: (options)->
-		# ignore loading unless it has locals path
-		# return unless options and 'locals' in options
-		# check options
-		for p in ['default', 'param', 'setLangParam']
-			throw new Error "options.#{p} expected string" if p of options and typeof options[p] isnt 'string'
-		throw new Error 'options.ctxLocal expected function' if 'ctxLocal' of options and typeof options.ctxLocal isnt 'function'
-		throw new Error 'options.cache expected boolean' if 'cache' of options and typeof options.cache isnt 'boolean'
-		# clear already set values
-		_clear this
-		# default local
-		defaultLocal = options.default || 'en' # default language
+		options ?= _create null
 		# load files
-		i18nMap= @m= await _loadI18nMap options.locals || Path.join process.cwd, 'i18n'
-		throw new Error "Default local [#{defaultLocal}] is missing" unless defaultLocal of i18nMap
-		# session management
-		session = options.session
-		if typeof session is 'object'
-			throw new Error 'session.set function is required' unless typeof session.set is 'function'
-			throw new Error 'session.get function is required' unless typeof session.get is 'function'
-			sessionGet = session.get
-			sessionSet = session.set
-		else if typeof session is 'string' or not session
-			sessionParam= session || 'i18n'
-			sessionGet= (ctx) -> ctx.session.get sessionParam
-			sessionSet= (ctx, value) -> ctx.session.set sessionParam, value
-		else
-			throw new Error 'Illegal options.session'
-		# settings
-		settings = @s
-		settings[<%= settings.default %>]= defaultLocal
-		settings[<%= settings.param %>]= options.param || 'i18n'
-		settings[<%= settings.setLangParam %>]= options.setLangParam || 'set-lang'
-		settings[<%= settings.ctxLocal %>]= options.ctxLocal
-		settings[<%= settings.sessionGet %>]= sessionGet
-		settings[<%= settings.sessionSet %>]= sessionSet
-		# set local context method
-		Object.defineProperty @app.Context, 'setLocal',
-			value: _setLocal
-			configurable: on
+		@map= i18nMap= await _loadI18nMap options.locals or Path.join process.cwd(), 'i18n'
+		# get a local from cache
+		@get= _getFromCache @app.CACHE, i18nMap
+		# properties
+		@fxes=
+			Context:
+				setLocal: _setLocal @app.CACHE, i18nMap
 		# enable plugin
 		@enable()
 		return
@@ -95,28 +101,23 @@ class I18N
 	destroy: ->
 		# disable i18n
 		@disable()
-		# clear already set values
-		_clear this
 		# remove set local
-		delete @app.Context.setLocal
 		delete @app.i18n
 		return
 	###*
 	 * Disable, enable
 	###
 	disable: ->
-		# remove i18n wrapper
-		@app.unwrap @_wrapper
+		@app.removeProperties 'i18n', @fxes
 		return
 
 	enable: ->
-		# add wrapper
-		@app.wrap 0, @_wrapper
+		@app.addProperties 'i18n', @fxes
 		return
 
 	###*
 	 * Has
 	###
-	has: (local)-> local of @m
+	has: (local)-> local of @map
 
 module.exports= I18N
