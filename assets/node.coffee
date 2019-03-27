@@ -86,6 +86,7 @@ class I18N
 		options ?= _create null
 		# load files
 		@map= i18nMap= await _loadI18nMap options.locals or Path.join process.cwd(), 'i18n'
+		@locals= Object.keys i18nMap
 		# get a local from cache
 		@get= _getFromCache @app.CACHE, i18nMap
 		# properties
