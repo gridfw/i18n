@@ -76,6 +76,9 @@ class I18N
 		_defineProperty app, 'i18n',
 			value: this
 			configurable: on
+		_defineProperty app.locals, 'I18N',
+			value: this,
+			configurable: on
 		return
 	###*
 	 * Reload the app
@@ -86,7 +89,7 @@ class I18N
 		options ?= _create null
 		# load files
 		@map= i18nMap= await _loadI18nMap options.locals or Path.join process.cwd(), 'i18n'
-		@locals= Object.keys i18nMap
+		@keys= @locals= Object.keys i18nMap
 		# get a local from cache
 		@get= _getFromCache @app.CACHE, i18nMap
 		# properties
