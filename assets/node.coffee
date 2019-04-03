@@ -90,6 +90,12 @@ class I18N
 		# load files
 		@map= i18nMap= await _loadI18nMap options.locals or Path.join process.cwd(), 'i18n'
 		@keys= @locals= Object.keys i18nMap
+		# supported languages
+		lng= []
+		for lc in @keys
+			lc= lc.substr 0, 2 if lc.length > 2
+			lng.push lc unless lc in lng
+		@languages= lng
 		# get a local from cache
 		@get= _getFromCache @app.CACHE, i18nMap
 		# properties
