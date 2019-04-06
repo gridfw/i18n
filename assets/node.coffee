@@ -67,7 +67,6 @@ _loadI18nMap = (globSelector)->
 				reject err
 			return
 
-
 class I18N
 	constructor: (app)->
 		@app= app
@@ -88,14 +87,15 @@ class I18N
 	reload: (options)->
 		options ?= _create null
 		# load files
-		@map= i18nMap= await _loadI18nMap options.locals or Path.join process.cwd(), 'i18n'
+		if options.mapper # use mapper
+			@mapper= mapper= require options.mapper
+			@map= i18nMap= _create null
+			baseDir= Path.dirname options.mapper
+			for lang in mapper.locals
+				i18nMap[lang.local]= Path.join baseDir, lang.local
+		else # use glob selector
+			@map= i18nMap= await _loadI18nMap options.locals or Path.join process.cwd(), 'i18n/**/*.js'
 		@keys= @locals= Object.keys i18nMap
-		# supported languages
-		lng= []
-		for lc in @keys
-			lc= lc.substr 0, 2 if lc.length > 2
-			lng.push lc unless lc in lng
-		@languages= lng
 		# get a local from cache
 		@get= _getFromCache @app.CACHE, i18nMap
 		# properties
