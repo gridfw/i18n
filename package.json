@@ -1,6 +1,6 @@
 {
   "name": "gridfw-i18n",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "fast i18n plugin for GridFW",
   "main": "build/index.js",
   "scripts": {
